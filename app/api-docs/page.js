@@ -7,6 +7,14 @@ import { Code } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ApiDocsPage() {
+  const compactJsonOrNull = (value) => {
+    try {
+      const parsed = JSON.parse(value);
+      return JSON.stringify(parsed);
+    } catch (e) {
+      return null;
+    }
+  };
   const endpoints = [
     {
       method: 'POST',
@@ -128,13 +136,10 @@ export default function ApiDocsPage() {
               </p>
               <div className="bg-muted p-4 rounded-lg">
                 <code className="text-sm">
-                  curl -X POST https://thermal-sr-optics.preview.emergentagent.com/api/auth/login \
-                  <br />
-                  {"  "}-H "Content-Type: application/json" \
-                  <br />
-                  {"  "}-d '{"email": "user@example.com", "password": "password"}' \
-                  <br />
-                  {"  "}-c cookies.txt
+                  {`curl -X POST https://thermal-sr-optics.preview.emergentagent.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "password"}' \
+  -c cookies.txt`}
                 </code>
               </div>
             </CardContent>
@@ -191,13 +196,17 @@ export default function ApiDocsPage() {
                           {"  "}-H "Content-Type: application/json" \
                           <br />
                           {"  "}-b cookies.txt
-                          {endpoint.request && (
-                            <>
-                              {' '}\
-                              <br />
-                              {"  "}-d '{JSON.stringify(JSON.parse(endpoint.request), null, 2).replace(/\n/g, '')}'
-                            </>
-                          )}
+                          {(() => {
+                            const compact = endpoint.request ? compactJsonOrNull(endpoint.request) : null;
+                            if (!compact) return null;
+                            return (
+                              <>
+                                {' '}\
+                                <br />
+                                {"  "}-d '{compact}'
+                              </>
+                            );
+                          })()}
                         </code>
                       </div>
                     </TabsContent>
