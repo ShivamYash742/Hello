@@ -1,0 +1,61 @@
+# Training configuration for Swin Transformer
+
+experiment_name: "swin_thermal_sr"
+output_dir: "runs"
+seed: 42
+
+# Model configuration
+model:
+  type: "swin"
+  params:
+    scale: 2
+    patch_size: 4
+    embed_dim: 96
+    depths: [2, 2, 6, 2]
+    num_heads: [3, 6, 12, 24]
+    window_size: 7
+
+# Data configuration
+data:
+  data_dir: "data/train"
+  batch_size: 8  # Smaller batch size for transformer
+  num_workers: 4
+  scale: 2
+  patch_size: 192  # Larger patches for transformer
+
+# Loss configuration
+loss:
+  weights:
+    content: 1.0
+    ssim: 0.3  # Higher SSIM weight for transformer
+    edge: 0.1
+    tv: 5e-5  # Lower TV for transformer
+    physics: 0.4
+  use_physics: true
+
+# Optimizer configuration
+optimizer:
+  type: "adamw"
+  lr: 1e-4  # Lower LR for transformer
+  weight_decay: 5e-2  # Higher weight decay
+
+# Scheduler configuration
+scheduler:
+  type: "cosine"
+  min_lr: 1e-7
+
+# Training configuration
+training:
+  epochs: 150  # More epochs for transformer
+  mixed_precision: true
+  grad_clip: 1.0
+  log_interval: 50
+  early_stopping: 30
+
+# Inference configuration
+inference:
+  tile_size: 384  # Smaller tiles for transformer memory
+  overlap: 48
+
+# Checkpoint configuration
+max_checkpoints: 5

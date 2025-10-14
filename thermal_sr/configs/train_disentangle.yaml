@@ -1,0 +1,57 @@
+# Training configuration for Guidance-Disentanglement model
+
+experiment_name: "disentangle_thermal_sr"
+output_dir: "runs"
+seed: 42
+
+# Model configuration
+model:
+  type: "disentangle"
+  params:
+    scale: 2
+    num_channels: 64
+
+# Data configuration
+data:
+  data_dir: "data/train"
+  batch_size: 12  # Slightly smaller due to model complexity
+  num_workers: 4
+  scale: 2
+  patch_size: 128
+
+# Loss configuration
+loss:
+  weights:
+    content: 1.0
+    ssim: 0.2
+    edge: 0.15  # Higher edge weight for structure preservation
+    tv: 1e-4
+    physics: 0.7  # Higher physics weight for disentanglement
+  use_physics: true
+
+# Optimizer configuration
+optimizer:
+  type: "adamw"
+  lr: 1.5e-4  # Slightly lower LR for stability
+  weight_decay: 1e-4
+
+# Scheduler configuration
+scheduler:
+  type: "cosine"
+  min_lr: 1e-6
+
+# Training configuration
+training:
+  epochs: 120  # More epochs for convergence
+  mixed_precision: true
+  grad_clip: 0.5  # Tighter gradient clipping
+  log_interval: 100
+  early_stopping: 25
+
+# Inference configuration
+inference:
+  tile_size: 512
+  overlap: 64
+
+# Checkpoint configuration
+max_checkpoints: 5

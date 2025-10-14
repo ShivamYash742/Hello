@@ -1,0 +1,57 @@
+# Training configuration for Alignment-Fusion CNN
+
+experiment_name: "cnn_thermal_sr"
+output_dir: "runs"
+seed: 42
+
+# Model configuration
+model:
+  type: "cnn"
+  params:
+    scale: 2
+    num_channels: 64
+
+# Data configuration
+data:
+  data_dir: "data/train"
+  batch_size: 16
+  num_workers: 4
+  scale: 2
+  patch_size: 128
+
+# Loss configuration
+loss:
+  weights:
+    content: 1.0
+    ssim: 0.2
+    edge: 0.1
+    tv: 1e-4
+    physics: 0.5
+  use_physics: true
+
+# Optimizer configuration
+optimizer:
+  type: "adamw"
+  lr: 2e-4
+  weight_decay: 1e-4
+
+# Scheduler configuration
+scheduler:
+  type: "cosine"
+  min_lr: 1e-6
+
+# Training configuration
+training:
+  epochs: 100
+  mixed_precision: true
+  grad_clip: 1.0
+  log_interval: 100
+  early_stopping: 20
+
+# Inference configuration
+inference:
+  tile_size: 512
+  overlap: 64
+
+# Checkpoint configuration
+max_checkpoints: 5
