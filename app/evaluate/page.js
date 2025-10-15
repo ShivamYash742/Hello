@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,23 +8,60 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { Download, BarChart3, FileText, ImageIcon } from 'lucide-react';
+import { Download, BarChart3, FileText, ImageIcon, RefreshCw } from 'lucide-react';
 
 export default function EvaluatePage() {
-  const metrics = {
-    psnr: 28.42,
-    ssim: 0.891,
-    rmse: 1.24,
-    edgeSharpness: 0.78,
-    thermalBias: 0.15,
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchEvaluations = async () => {
+    try {
+      const response = await fetch('/api/evaluations');
+      const result = await response.json();
+      if (result.success) {
+        setData(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch evaluations:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const perClassMetrics = [
-    { class: 'Urban', psnr: 29.1, ssim: 0.903, rmse: 1.12, pixels: 524288 },
-    { class: 'Vegetation', psnr: 27.8, ssim: 0.882, rmse: 1.31, pixels: 786432 },
-    { class: 'Water', psnr: 30.2, ssim: 0.915, rmse: 0.98, pixels: 262144 },
-    { class: 'Bare Soil', psnr: 26.9, ssim: 0.865, rmse: 1.45, pixels: 327680 },
-  ];
+  useEffect(() => {
+    fetchEvaluations();
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <RefreshCw className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading evaluation data...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!data) {
+    return (
+      <DashboardLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">No Evaluation Data</h2>
+            <p className="text-muted-foreground mb-4">Process some images first to see evaluation results.</p>
+            <Button asChild>
+              <Link href="/fuse-sr">Go to Super-Resolution</Link>
+            </Button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { metrics, perClassMetrics, job } = data;
 
   return (
     <DashboardLayout>
@@ -158,21 +196,51 @@ export default function EvaluatePage() {
                 <TabsContent value="comparison" className="mt-4">
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <div className="text-sm font-medium text-center">Reference Thermal</div>
-                      <div className="aspect-square bg-gradient-to-br from-red-500/30 to-yellow-500/30 rounded-lg border flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      <div className="text-sm font-medium text-center">Original Thermal</div>
+                      <div className="aspect-square rounded-lg border overflow-hidden">
+                        {job.thermalFile ? (
+                          <img 
+                            src={`/api/images/${job.thermalFile}`} 
+                            alt="Original Thermal" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-red-500/30 to-yellow-500/30 flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-center">SR Output</div>
-                      <div className="aspect-square bg-gradient-to-br from-red-500/40 to-yellow-500/40 rounded-lg border-2 border-[#F47216] flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      <div className="aspect-square rounded-lg border-2 border-[#F47216] overflow-hidden">
+                        {job.srFile ? (
+                          <img 
+                            src={`/api/images/${job.srFile}`} 
+                            alt="SR Output" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-red-500/40 to-yellow-500/40 flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="text-sm font-medium text-center">Difference</div>
-                      <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-lg border flex items-center justify-center">
-                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      <div className="text-sm font-medium text-center">Optical Reference</div>
+                      <div className="aspect-square rounded-lg border overflow-hidden">
+                        {job.opticalFile ? (
+                          <img 
+                            src={`/api/images/${job.opticalFile}`} 
+                            alt="Optical Reference" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-green-500/20 flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

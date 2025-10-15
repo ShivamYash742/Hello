@@ -23,23 +23,56 @@ export default function FuseSRPage() {
   const [progress, setProgress] = useState(0);
   const [completed, setCompleted] = useState(false);
 
+  const [thermalFile, setThermalFile] = useState(null);
+  const [opticalFile, setOpticalFile] = useState(null);
+  const [resultImage, setResultImage] = useState(null);
+
   const handleProcess = async () => {
+    if (!thermalFile || !opticalFile) {
+      toast.error('Please upload both thermal and optical images');
+      return;
+    }
+
     setProcessing(true);
     setProgress(0);
     
-    // Simulate processing with progress
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setProcessing(false);
-          setCompleted(true);
-          toast.success('Super-resolution completed!');
-          return 100;
-        }
-        return prev + 5;
+    try {
+      const formData = new FormData();
+      formData.append('thermal', thermalFile);
+      formData.append('optical', opticalFile);
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 90));
+      }, 200);
+
+      const response = await fetch('/api/thermal-sr', {
+        method: 'POST',
+        body: formData,
       });
-    }, 200);
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      if (!response.ok) {
+        throw new Error('Failed to process images');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setResultImage(result.data.result);
+        setCompleted(true);
+        toast.success('Super-resolution completed!');
+      } else {
+        throw new Error(result.error || 'Processing failed');
+      }
+    } catch (error) {
+      console.error('Processing error:', error);
+      toast.error('Failed to process images: ' + error.message);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -201,21 +234,72 @@ export default function FuseSRPage() {
                   <CardDescription>Real-time super-resolution output</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm">Input (LR Thermal)</Label>
-                      <div className="aspect-square bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-lg flex items-center justify-center border">
-                        <span className="text-sm text-muted-foreground">512 × 512</span>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm">Thermal Image</Label>
+                        <div className="aspect-square bg-gradient-to-br from-red-500/20 to-yellow-500/20 rounded-lg flex items-center justify-center border border-dashed">
+                          {thermalFile ? (
+                            <img 
+                              src={URL.createObjectURL(thermalFile)} 
+                              alt="Thermal" 
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setThermalFile(e.target.files[0])}
+                                className="hidden"
+                                id="thermal-upload"
+                              />
+                              <label htmlFor="thermal-upload" className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                                Click to upload thermal image
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm">Optical Image</Label>
+                        <div className="aspect-square bg-gradient-to-br from-blue-500/20 to-green-500/20 rounded-lg flex items-center justify-center border border-dashed">
+                          {opticalFile ? (
+                            <img 
+                              src={URL.createObjectURL(opticalFile)} 
+                              alt="Optical" 
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setOpticalFile(e.target.files[0])}
+                                className="hidden"
+                                id="optical-upload"
+                              />
+                              <label htmlFor="optical-upload" className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                                Click to upload optical image
+                              </label>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm">Output (SR Thermal)</Label>
-                      <div className="aspect-square bg-gradient-to-br from-red-500/30 to-yellow-500/30 rounded-lg flex items-center justify-center border-2 border-[#F47216]">
-                        <span className="text-sm font-medium">
-                          {scale === '2' ? '1024 × 1024' : '2048 × 2048'}
-                        </span>
+
+                    {resultImage && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">Super-Resolution Result</Label>
+                        <div className="aspect-square rounded-lg border-2 border-[#F47216] overflow-hidden">
+                          <img 
+                            src={resultImage} 
+                            alt="SR Result" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {processing && (

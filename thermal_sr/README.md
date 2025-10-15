@@ -28,6 +28,14 @@ python scripts/tile_infer.py --checkpoint runs/best.pt --scene data/sample_scene
 python scripts/eval.py --checkpoint runs/best.pt --data data/test
 ```
 
+## SIH Dataset (Landsat 8 OLI/TIRS)
+
+See `docs/SIH_DATASET.md` for:
+- Expected folder layout (optical/thermal pairs)
+- Download/staging steps
+- Preparation script to build OLI RGB + TIRS Band10/11 pairs
+- Training, inference, and evaluation commands
+
 ## Model Backends
 
 ### 1. Alignment-Fusion CNN
